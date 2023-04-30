@@ -1,0 +1,11 @@
+Flask
+flask-cors
+pymysql
+sqlalchemy
+flask-sqlalchemy
+marshmallow
+bcrypt
+pyjwt
+marshmallow-sqlalchemy
+pillow
+openai
