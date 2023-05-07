@@ -226,6 +226,10 @@ def create_post(user=None):
     b["title"] = b["title"].strip()
     if (b["title"] == ""):
         return {"error": "Title cannot be empty"}, 400
+    subbed  = database.session.query(db.SubscribedCommunity).filter_by(
+        user_id=user["id"], community_id=b["id"]).first()
+    if subbed is None:
+        return {"error": "You are not subscribed to this community"}, 400
     post = db.Post(
         title=b["title"],
         content=b["content"],
@@ -266,6 +270,11 @@ def update_post(user=None):
     post = database.session.query(db.Post).filter_by(id=b["id"]).first()
     if post is None:
         return {"error": "Post not found"}, 404
+    subbed = database.session.query(db.SubscribedCommunity).filter_by(
+        user_id=user["id"], community_id=post.community_id).first()
+    if subbed is None:
+        return {"error": "You are not subscribed to this community"}, 400
+  
     b["title"] = b["title"].strip()
     if (b["title"] == ""):
         return {"error": "Title cannot be empty"}, 400
@@ -441,6 +450,10 @@ def join_community(user=None):
     community = database.session.query(db.Community).get(b["id"])
     if community is None:
         return {"error": "Community not found"}, 404
+    already_subscribed = database.session.query(db.SubscribedCommunity).filter_by(
+        user_id=user["id"], community_id=b["id"]).first()
+    if already_subscribed is not None:
+        return {"error": "Already subscribed"}, 400
     subscribed = db.SubscribedCommunity(
         user_id=user["id"], community_id=b["id"])
     database.session.add(subscribed)
@@ -461,32 +474,12 @@ def leave_community(user=None):
         return {"error": "Community not found"}, 404
     subscribed = database.session.query(db.SubscribedCommunity).filter_by(
         user_id=user["id"], community_id=b["id"]).first()
+    if subscribed is None:
+        return {"error": "Not subscribed"}, 400
     database.session.delete(subscribed)
-    return '{"status": "OK"}', 200
-
-
-@app.route("/c/update", methods=["POST"])
-@authorize
-def update_community(user=None):
-    b = request.get_json()
-    try:
-        schema.update_community_schema.load(b)
-    except ValidationError as err:
-        return err.messages, 400
-    community = database.session.query(db.Community).get(b["id"])
-    if community is None:
-        return {"error": "Community not found"}, 404
-    if b["name"]:
-        b["name"] = b["name"].strip()
-        if len(b["name"]) == 0:
-            return {"error": "Community name cannot be empty"}, 400
-        community.name = b["name"]
-    if b["description"]:
-        community.description = b["description"]
-    if "display_pic" in b:
-        community.display_pic = b["display_pic"]
     database.session.commit()
     return '{"status": "OK"}', 200
+
 
 
 @app.route("/c/<int:community_id>/posts/<int:pagenum>", methods=["GET"])
@@ -701,10 +694,10 @@ def update_me(user=None):
 @app.route("/me/communities", methods=["GET"])
 @authorize
 def get_me_communities(user=None):
-    communities = database.session.query(db.Community).filter_by(
-        created_by_id=user["id"]).all()
+    joined = database.session.query(db.Community).join(db.SubscribedCommunity).filter(
+        db.SubscribedCommunity.user_id == user["id"]).all()
     communities_schema = schema.CommunitySchema(many=True)
-    return jsonify(communities_schema.dump(communities)), 200
+    return jsonify(communities_schema.dump(joined)), 200
 
 
 @app.route("/me/feed", methods=["GET"])
