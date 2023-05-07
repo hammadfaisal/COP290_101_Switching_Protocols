@@ -227,7 +227,7 @@ def create_post(user=None):
     if (b["title"] == ""):
         return {"error": "Title cannot be empty"}, 400
     subbed  = database.session.query(db.SubscribedCommunity).filter_by(
-        user_id=user["id"], community_id=b["id"]).first()
+        user_id=user["id"], community_id=b["community_id"]).first()
     if subbed is None:
         return {"error": "You are not subscribed to this community"}, 400
     post = db.Post(

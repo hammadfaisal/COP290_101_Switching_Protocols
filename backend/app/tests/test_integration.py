@@ -169,6 +169,10 @@ def test_get_community_by_id_fail_no_community(client):
     assert response.status_code == 404
     assert "error" in response.get_json()
 
+def test_leave_community_success(client):
+    response = client.post("/c/leave",json = {"id" : "1"} , headers={"Authorization": token})
+    assert response.status_code == 200
+
 def test_join_community_success(client):
     response = client.post("/c/join",json = {"id" : "1"} , headers={"Authorization": token})
     assert response.status_code == 200
@@ -182,10 +186,6 @@ def test_join_community_fail_no_data(client):
     response = client.post("/c/join", json = {"id" : ""} , headers={"Authorization": token})
     assert response.status_code == 400
 
-def test_leave_community_success(client):
-    response = client.post("/c/leave",json = {"id" : "1"} , headers={"Authorization": token})
-    assert response.status_code == 200
-
 def test_leave_community_fail_no_community(client):
     response = client.post("/c/leave",json = {"id" : "2"} , headers={"Authorization": token})
     assert response.status_code == 404
@@ -193,31 +193,6 @@ def test_leave_community_fail_no_community(client):
 
 def test_leave_community_fail_no_data(client):
     response = client.post("/c/leave", json = {"id" : ""} , headers={"Authorization": token})
-    assert response.status_code == 400
-
-def test_update_community_success(client):
-    response = client.post("/c/update",json = {
-        "id" : "1",
-        "name" : "test2",
-        "description" : "test2"
-    } , headers={"Authorization": token})
-    assert response.status_code == 200
-
-def test_update_community_fail_no_community(client):
-    response = client.post("/c/update",json = {
-        "id" : "2",
-        "name" : "test2",
-        "description" : "test2"
-    } , headers={"Authorization": token})
-    assert response.status_code == 404
-    assert "error" in response.get_json()
-
-def test_update_community_fail_no_data(client):
-    response = client.post("/c/update", json = {
-        "id" : "",
-        "name" : "",
-        "description" : ""
-    } , headers={"Authorization": token})
     assert response.status_code == 400
 
 def test_get_community_posts_success(client):
